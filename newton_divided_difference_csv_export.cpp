@@ -1,6 +1,7 @@
 #include<iostream>
 #include<vector>
 #include<cmath>
+#include <fstream>
 
 using namespace std;
 
@@ -90,5 +91,38 @@ vector<long double> newton_divided_difference(vector<long double>& x, vector<lon
 
     cout << endl;
 
-    return coeff_standard;
+    ofstream out("polynomial_coefficients.csv");
+
+    for(int i = 0; i < n; i++){
+        if(fabsl(coeff_standard[i]) < EPS){
+            coeff_standard[i] = 0;
+        }
+        out << coeff_standard[i] << "\n";
+    }
+
+    out.close();
+        return coeff_standard;
+    }
+
+
+int main(){
+
+    ifstream file("data.csv");
+
+    vector<long double> x,y;
+
+    long double x_val, y_val;
+    char comma;
+
+    file.ignore(1000, '\n');
+
+    while(file >> x_val >> comma >> y_val) {
+        x.emplace_back(x_val);
+        y.emplace_back(y_val);
+    }
+  
+    file.close();
+
+    newton_divided_difference(x,y);
+
 }
