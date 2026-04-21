@@ -6,8 +6,8 @@
 
 using namespace std;
 
-long double evaluate(long double c1, const vector<long double>& coeff) {
-    long double total = 0;
+ double evaluate(double c1, const vector<double>& coeff) {
+     double total = 0;
     for (int i = 0; i < coeff.size(); i++) {
         total += coeff[i] * pow(c1, i);
     }
@@ -15,18 +15,18 @@ long double evaluate(long double c1, const vector<long double>& coeff) {
 }
 
 // Secant Method
-long double solveSecant(long double x0, long double x1, const vector<long double>& d_Coef) {
+double solveSecant(double x0, double x1, const vector<double>& d_Coef) {
 
-    long double x_prev = x0;
-    long double x_curr = x1;
+    double x_prev = x0;
+    double x_curr = x1;
 
     for (int i = 0; i < 30; i++) {
-        long double f_prev = evaluate(x_prev, d_Coef);
-        long double f_curr = evaluate(x_curr, d_Coef);
+        double f_prev = evaluate(x_prev, d_Coef);
+        double f_curr = evaluate(x_curr, d_Coef);
 
         if (fabsl(f_curr - f_prev) < 1e-18) break;
-
-        long double x_next = x_curr - f_curr * (x_curr - x_prev) / (f_curr - f_prev);
+        double x = f_curr * (x_curr - x_prev) / (f_curr - f_prev);
+        double x_next = x_curr - x;
 
         if (fabsl(x_next - x_curr) < 1e-10)
             return x_next;
@@ -39,22 +39,22 @@ long double solveSecant(long double x0, long double x1, const vector<long double
 }
 
 // Newton-Raphson Method
-long double solveNewtonRaphson(long double x_guess, const vector<long double>& d_Coef) {
+double solveNewtonRaphson(double x_guess, const vector<double>& d_Coef) {
 
-    vector<long double> secondDerivCoeffs;
+    vector<double> secondDerivCoeffs;
     for (int i = 1; i < d_Coef.size(); i++) {
-        secondDerivCoeffs.push_back(i * d_Coef[i]);
+        secondDerivCoeffs.push_back(i*d_Coef[i]);
     }
 
-    long double x = x_guess;
+    double x = x_guess;
 
     for (int i = 0; i < 30; i++) {
-        long double fx = evaluate(x, d_Coef);
-        long double dfx = evaluate(x, secondDerivCoeffs);
+        double fx = evaluate(x, d_Coef);
+        double dfx = evaluate(x, secondDerivCoeffs);
 
         if (fabsl(dfx) < 1e-10) break;
 
-        long double x_next = x - fx / dfx;
+        double x_next = x - fx / dfx;
 
         if (fabsl(x_next - x) < 1e-12)
             return x_next;
@@ -65,46 +65,46 @@ long double solveNewtonRaphson(long double x_guess, const vector<long double>& d
     return x;
 }
 
-// 🔥 NEW FUNCTION: scan domain and find ALL roots
-vector<long double> findAllRoots(long double a,long double b,int steps,const vector<long double>& d_Coef,string method) {
-    vector<long double> roots;
-    long double step = (b - a) / steps;
+//  FUNCTION : to find all the roots within domain
+vector<double> findAllRoots(double a,double b,int steps,const vector<double>& d_Coef,string method) {
+    vector<double> roots;
+    double step = (b - a) / steps;
 
     for (int i = 0; i < steps; i++) {
 
-        long double x1 = a + i * step;
-        long double x2 = x1 + step;
+        double x1 = a + i * step;
+        double x2 = x1 + step;
 
-        long double f1 = evaluate(x1, d_Coef);
-        long double f2 = evaluate(x2, d_Coef);
+        double f1 = evaluate(x1, d_Coef);
+        double f2 = evaluate(x2, d_Coef);
 
-        // sign change → root exists
+        // if f1*f2 is negative then there will be a root between these points
         if (f1 * f2 <= 0) {
 
-            long double root;
+             double root;
 
             if (method == "secant") {
                 root = solveSecant(x1, x2, d_Coef);
             } else { // newton
-                long double mid = (x1 + x2) / 2;
+                 double mid = (x1 + x2) / 2;
                 root = solveNewtonRaphson(mid, d_Coef);
             }
 
-            // keep only roots inside domain
+            // root should be within domain
             if (root < a || root > b) continue;
 
             // avoid duplicates
-            bool isNew = true;
+            int c = 1;
             for (auto r : roots) {
                 if (fabsl(r - root) < 1e-6) {
-                    isNew = false;
+                    c = 0;
                     break;
                 }
             }
-
-            if (isNew) {
+            if (c) {
                 roots.push_back(root);
             }
+            
         }
     }
 
@@ -114,10 +114,15 @@ vector<long double> findAllRoots(long double a,long double b,int steps,const vec
 int main(){
 
     // read data
-    ifstream file("polynomial_coefficients.csv");
+    string s;
+    // taking input as the name of method of which we need to find derivate roots.
+    cin>>s;
+    string y =s+".csv";
+    
+    ifstream file(y);
 
-    vector<long double> coeff_standard;
-    long double coeff_val;
+    vector<double> coeff_standard;
+     double coeff_val;
 
     while(file >> coeff_val) {
         coeff_standard.emplace_back(coeff_val);
@@ -126,17 +131,16 @@ int main(){
     file.close();
 
     // derivative coefficients p'(x)
-    vector<long double> derivCoeffs;
+    vector<double> derivCoeffs;
     for (int i = 1; i < coeff_standard.size(); i++) {
         derivCoeffs.push_back(i * coeff_standard[i]);
     }
 
     if (coeff_standard.size() > 2) {
 
-        // 🔥 choose method here
-        string method = "newton ";  // change to "newton" if needed
+        string method = "newton "; 
 
-        vector<long double> roots = findAllRoots(-1.0, 1.0, 200, derivCoeffs, method);
+        vector<double> roots = findAllRoots(-1.0, 1.0, 200, derivCoeffs, method);
 
         cout << fixed << setprecision(10);
         cout << "\nRoots using " << method << " method in [-1,1]:\n\n";
@@ -147,10 +151,9 @@ int main(){
     }
     if (coeff_standard.size() > 2) {
 
-        // 🔥 choose method here
-        string method = "secant ";  // change to "newton" if needed
+        string method = "secant ";  
 
-        vector<long double> roots = findAllRoots(-1.0, 1.0, 200, derivCoeffs, method);
+        vector<double> roots = findAllRoots(-1.0, 1.0, 200, derivCoeffs, method);
 
         cout << fixed << setprecision(10);
         cout << "\nRoots using " << method << " method in [-1,1]:\n\n";
